@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>やったよ！おかえりチェック</title>
+  <meta name="theme-color" content="#4A90E2">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="やったよ！">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/190/190411.png">
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIuOChOOAoeOBiO7vvIEnLCAKICAic2hvcnRfbmFtZSI6ICLjg4jjgqPjg4giLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2Y0ZjZmOSIsCiAgInRoZW1lX2NvbG9yIjogIiM0QTkwRTIiCiB9">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #4A90E2;
+      --ryo-color: #3B82F6;
+      --koharu-color: #EC4899;
+      --bg-color: #F4F6F9;
+      --card-bg: #FFFFFF;
+      --text-main: #1F2937;
+      --text-muted: #6B7280;
+      --success-color: #10B981;
+      --border-radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      padding: 16px;
+      padding-bottom: 40px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .date-display {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* User Switcher */
+    .user-tabs {
+      display: flex;
+      background: #E5E7EB;
+      border-radius: 24px;
+      padding: 4px;
+      margin-bottom: 16px;
+      gap: 4px;
+    }
+
+    .user-tab {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 1rem;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .user-tab.active[data-user="ryo"] {
+      background: var(--ryo-color);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .user-tab.active[data-user="koharu"] {
+      background: var(--koharu-color);
+      color: white;
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+    }
+
+    /* Day Type Switcher */
+    .day-tabs {
+      display: flex;
+      background: white;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 16px;
+      border: 1px solid #E5E7EB;
+    }
+
+    .day-tab {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .day-tab.active {
+      background: #F3F4F6;
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    /* Controls Bar */
+    .controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .edit-toggle-btn, .install-btn {
+      background: white;
+      border: 1px solid #D1D5DB;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .edit-toggle-btn.editing {
+      background: #FEF2F2;
+      border-color: #EF4444;
+      color: #EF4444;
+    }
+
+    .progress-bar-container {
+      height: 8px;
+      background: #E5E7EB;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--success-color);
+      transition: width 0.3s ease;
+    }
+
+    /* Task List */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .task-card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .task-card.done {
+      background: #F0FDF4;
+      border-color: #86EFAC;
+      opacity: 0.85;
+    }
+
+    .task-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .task-icon {
+      font-size: 1.5rem;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #F3F4F6;
+      border-radius: 10px;
+    }
+
+    .task-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+
+    .task-card.done .task-title {
+      text-decoration: line-through;
+      color: #059669;
+    }
+
+    .task-btn {
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: #E5E7EB;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+
+    .task-card.done .task-btn {
+      background: var(--success-color);
+      color: white;
+    }
+
+    .delete-btn {
+      background: #FEE2E2;
+      color: #EF4444;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    /* Add Task Form */
+    .add-task-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      border: 1px dashed #CBD5E1;
+    }
+
+    .add-task-form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .add-task-select {
+      border: 1px solid #D1D5DB;
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 1.1rem;
+      background: #F9FAFB;
+    }
+
+    .add-task-input {
+      flex: 1;
+      border: 1px solid #D1D5DB;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .add-task-btn {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Message Section */
+    .message-section {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      margin-bottom: 24px;
+    }
+
+    .message-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .quick-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .quick-tag {
+      background: #F3F4F6;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .message-input-box {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .message-input {
+      flex: 1;
+      border: 1px solid #D1D5DB;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .message-send-btn {
+      background: #F59E0B;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .message-history {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .message-item {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .message-time {
+      font-size: 0.7rem;
+      color: #9CA3AF;
+    }
+
+    .share-btn {
+      background: #25D366;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* Footer Buttons */
+    .footer-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .reset-btn, .config-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-weight: 800;
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    .modal-body {
+      font-size: 0.9rem;
+      color: #4B5563;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .modal-close-btn {
+      width: 100%;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .help-step {
+      background: #F3F4F6;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header>
+      <h1>🏠 やったよ！おかえり</h1>
+      <div class="date-display" id="dateDisplay">----年--月--日(--)</div>
+    </header>
+
+    <!-- User Switcher -->
+    <div class="user-tabs">
+      <button class="user-tab active" data-user="ryo" onclick="switchUser('ryo')">👦 りょう</button>
+      <button class="user-tab" data-user="koharu" onclick="switchUser('koharu')">👧 こはる</button>
+    </div>
+
+    <!-- Day Type Switcher -->
+    <div class="day-tabs">
+      <button class="day-tab active" data-day="school" onclick="switchDayType('school')">🏫 学校がある日</button>
+      <button class="day-tab" data-day="off" onclick="switchDayType('off')">☀️ 学校がない日</button>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <button class="edit-toggle-btn" id="editToggleBtn" onclick="toggleEditMode()">✏️ へんしゅう</button>
+      <button class="install-btn" id="installBtn" onclick="openInstallHelp()">📱 アプリの追加方法</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Task List -->
+    <div class="task-list" id="taskList"></div>
+
+    <!-- Add Task Card -->
+    <div class="add-task-card">
+      <form class="add-task-form" onsubmit="handleAddTask(event)">
+        <select class="add-task-select" id="newTaskIcon">
+          <option value="🔑">🔑</option>
+          <option value="🥢">🥢</option>
+          <option value="💳">💳</option>
+          <option value="🐶">🐶</option>
+          <option value="🧺">🧺</option>
+          <option value="👕">👕</option>
+          <option value="✉️">✉️</option>
+          <option value="💊">💊</option>
+          <option value="🪟">🪟</option>
+          <option value="🎒">🎒</option>
+          <option value="🚲">🚲</option>
+          <option value="🧽">🧽</option>
+          <option value="🍽️">🍽️</option>
+          <option value="🎹">🎹</option>
+          <option value="🍊">🍊</option>
+          <option value="📐">📐</option>
+          <option value="📝">📝</option>
+          <option value="📱">📱</option>
+          <option value="📚">📚</option>
+        </select>
+        <input type="text" class="add-task-input" id="newTaskTitle" placeholder="あたらしい項目を追加..." required>
+        <button type="submit" class="add-task-btn">➕</button>
+      </form>
+    </div>
+
+    <!-- Message Section -->
+    <div class="message-section">
+      <div class="message-title">✉️ おかあさんへのメッセージ</div>
+      <div class="quick-tags">
+        <button class="quick-tag" onclick="addQuickMessage('ただいま！無事に帰ったよ！')">ただいま！</button>
+        <button class="quick-tag" onclick="addQuickMessage('宿題おわったよ！')">宿題おわったよ！</button>
+        <button class="quick-tag" onclick="addQuickMessage('おやつ食べていい？')">おやつ食べていい？</button>
+      </div>
+      <div class="message-input-box">
+        <input type="text" class="message-input" id="messageInput" placeholder="メッセージを入力...">
+        <button class="message-send-btn" onclick="sendMessage()">おくったよ！</button>
+      </div>
+      <div class="message-history" id="messageHistory"></div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="footer-actions">
+      <button class="reset-btn" onclick="resetCurrentTasks()">↺ 今日のチェックをクリア</button>
+      <button class="config-btn" onclick="resetToDefaultData()">⚙️ 初期設定に戻す</button>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div class="modal-overlay" id="installModal">
+    <div class="modal-content">
+      <div class="modal-title">📱 スマホのホーム画面に追加</div>
+      <div class="modal-body">
+        <p style="margin-bottom: 12px;">ホーム画面に追加すると、アプリとしてすぐに起動できます！</p>
+        <div class="help-step">
+          <strong>iPhone（Safari）の場合：</strong><br>
+          下部の共有ボタン（□に↑）をタップ ➔ 「ホーム画面に追加」を選択。
+        </div>
+        <div class="help-step">
+          <strong>Android（Chrome）の場合：</strong><br>
+          右上のメニュー（縦の3点）をタップ ➔ 「アプリをインストール」または「ホーム画面に追加」を選択。
+        </div>
+        <p style="margin-top: 10px; font-size:0.8rem; color:#6B7280;">※見つからない場合はスマホの検索で「やったよ」と検索してください。</p>
+      </div>
+      <button class="modal-close-btn" onclick="closeInstallHelp()">とじる</button>
+    </div>
+  </div>
+
+  <script>
+    // Default Task Presets (Final Version v4)
+    const DEFAULT_PRESETS = {
+      ryo: {
+        school: [
+          { id: 'r1', icon: '🔑', title: '鍵をかけた', done: false },
+          { id: 'r4', icon: '💳', title: '定期をかけた', done: false },
+          { id: 'r8', icon: '✉️', title: '手紙を出した', done: false },
+          { id: 'r2', icon: '🍱', title: 'お弁当箱を出した', done: false },
+          { id: 'r6', icon: '🧺', title: '洗濯物とりいれた', done: false },
+          { id: 'r7', icon: '👕', title: '洗濯物だした', done: false },
+          { id: 'r9', icon: '💊', title: '薬のんだ', done: false },
+          { id: 'r5', icon: '🐶', title: 'みぞれの散歩', done: false },
+          { id: 'r10', icon: '🪟', title: 'シャッター閉めた', done: false },
+          { id: 'r11', icon: '🎒', title: '明日の準備した', done: false }
+        ],
+        off: [
+          { id: 'ro1', icon: '🔑', title: '鍵をかけた', done: false },
+          { id: 'ro3', icon: '🧺', title: '洗濯物とりいれた', done: false },
+          { id: 'ro4', icon: '👕', title: '洗濯物だした', done: false },
+          { id: 'ro5', icon: '💊', title: '薬のんだ', done: false },
+          { id: 'ro2', icon: '🐶', title: 'みぞれの散歩', done: false },
+          { id: 'ro6', icon: '🪟', title: 'シャッター閉めた', done: false },
+          { id: 'ro7', icon: '🎒', title: '明日の準備した', done: false }
+        ]
+      },
+      koharu: {
+        school: [
+          { id: 'k1', icon: '🔑', title: '鍵をかけた', done: false },
+          { id: 'k3', icon: '🥢', title: '食具を出した', done: false },
+          { id: 'k5', icon: '👕', title: '洗濯物だした', done: false },
+          { id: 'k6', icon: '✉️', title: '手紙を出した', done: false },
+          { id: 'k7', icon: '🚲', title: '自転車の鍵かけた', done: false },
+          { id: 'k8', icon: '🧽', title: 'テーブル拭いた', done: false },
+          { id: 'k9', icon: '🍽️', title: '食洗機から食器出した', done: false },
+          { id: 'k10', icon: '🧺', title: '洗濯物を片した', done: false },
+          { id: 'k11', icon: '🎹', title: 'ピアノやった', done: false },
+          { id: 'k12', icon: '🍊', title: 'みかんやった', done: false },
+          { id: 'k13', icon: '📐', title: '極やった', done: false },
+          { id: 'k14', icon: '📝', title: '塾の宿題やった', done: false },
+          { id: 'k15', icon: '📱', title: 'スタサプやった', done: false },
+          { id: 'k4', icon: '🎒', title: '明日の準備をした', done: false }
+        ],
+        off: [
+          { id: 'ko1', icon: '🔑', title: '鍵をかけた', done: false },
+          { id: 'ko2', icon: '📚', title: '宿題をやった', done: false },
+          { id: 'ko3', icon: '🚲', title: '自転車の鍵かけた', done: false },
+          { id: 'ko4', icon: '🧽', title: 'テーブル拭いた', done: false },
+          { id: 'ko5', icon: '🍽️', title: '食洗機から食器出した', done: false },
+          { id: 'ko6', icon: '🧺', title: '洗濯物を片した', done: false },
+          { id: 'ko7', icon: '🎹', title: 'ピアノやった', done: false },
+          { id: 'ko8', icon: '🍊', title: 'みかんやった', done: false },
+          { id: 'ko9', icon: '📐', title: '極やった', done: false },
+          { id: 'ko10', icon: '📝', title: '塾の宿題やった', done: false },
+          { id: 'ko11', icon: '📱', title: 'スタサプやった', done: false },
+          { id: 'ko12', icon: '🎒', title: '明日の準備をした', done: false }
+        ]
+      }
+    };
+
+    // App State
+    let currentUser = 'ryo';
+    let currentDayType = 'school';
+    let isEditing = false;
+    let appData = {};
+    let messages = {};
+
+    // DOM Elements
+    const dateDisplay = document.getElementById('dateDisplay');
+    const taskList = document.getElementById('taskList');
+    const progressBar = document.getElementById('progressBar');
+    const editToggleBtn = document.getElementById('editToggleBtn');
+    const messageInput = document.getElementById('messageInput');
+    const messageHistory = document.getElementById('messageHistory');
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      setupDate();
+      loadData();
+      checkAutoReset();
+      render();
+    });
+
+    function setupDate() {
+      const now = new Date();
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      dateDisplay.textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日(${days[now.getDay()]})`;
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem('yattayo_data_v4');
+      if (saved) {
+        appData = JSON.parse(saved);
+      } else {
+        appData = JSON.parse(JSON.stringify(DEFAULT_PRESETS));
+        saveData();
+      }
+
+      const savedMsgs = localStorage.getItem('yattayo_messages_v4');
+      if (savedMsgs) {
+        messages = JSON.parse(savedMsgs);
+      } else {
+        messages = { ryo: [], koharu: [] };
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('yattayo_data_v4', JSON.stringify(appData));
+      localStorage.setItem('yattayo_last_date', new Date().toDateString());
+    }
+
+    function saveMessages() {
+      localStorage.setItem('yattayo_messages_v4', JSON.stringify(messages));
+    }
+
+    function checkAutoReset() {
+      const lastDate = localStorage.getItem('yattayo_last_date');
+      const today = new Date().toDateString();
+      if (lastDate && lastDate !== today) {
+        ['ryo', 'koharu'].forEach(u => {
+          ['school', 'off'].forEach(d => {
+            if (appData[u] && appData[u][d]) {
+              appData[u][d].forEach(t => t.done = false);
+            }
+          });
+        });
+        saveData();
+      }
+    }
+
+    function switchUser(user) {
+      currentUser = user;
+      document.querySelectorAll('.user-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.user === user);
+      });
+      render();
+    }
+
+    function switchDayType(dayType) {
+      currentDayType = dayType;
+      document.querySelectorAll('.day-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.day === dayType);
+      });
+      render();
+    }
+
+    function toggleEditMode() {
+      isEditing = !isEditing;
+      editToggleBtn.classList.toggle('editing', isEditing);
+      editToggleBtn.textContent = isEditing ? '✅ かんりょう' : '✏️ へんしゅう';
+      render();
+    }
+
+    function render() {
+      const tasks = appData[currentUser][currentDayType] || [];
+      taskList.innerHTML = '';
+
+      let doneCount = 0;
+
+      tasks.forEach(task => {
+        if (task.done) doneCount++;
+
+        const card = document.createElement('div');
+        card.className = `task-card ${task.done ? 'done' : ''}`;
+        card.onclick = (e) => {
+          if (!isEditing && e.target.tagName !== 'BUTTON') {
+            toggleTask(task.id);
+          }
+        };
+
+        card.innerHTML = `
+          <div class="task-info">
+            <div class="task-icon">${task.icon}</div>
+            <div class="task-title">${task.title}</div>
+          </div>
+          ${isEditing ? `
+            <button class="delete-btn" onclick="deleteTask('${task.id}')">🗑️ 削除</button>
+          ` : `
+            <button class="task-btn">${task.done ? 'やったよ！' : 'する'}</button>
+          `}
+        `;
+        taskList.appendChild(card);
+      });
+
+      // Progress bar
+      const percent = tasks.length > 0 ? (doneCount / tasks.length) * 100 : 0;
+      progressBar.style.width = `${percent}%`;
+
+      // Render Messages
+      renderMessages();
+    }
+
+    function toggleTask(id) {
+      const tasks = appData[currentUser][currentDayType];
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        task.done = !task.done;
+        saveData();
+        render();
+
+        if (task.done) {
+          const allDone = tasks.every(t => t.done);
+          if (allDone && typeof confetti === 'function') {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+          }
+        }
+      }
+    }
+
+    function deleteTask(id) {
+      appData[currentUser][currentDayType] = appData[currentUser][currentDayType].filter(t => t.id !== id);
+      saveData();
+      render();
+    }
+
+    function handleAddTask(e) {
+      e.preventDefault();
+      const icon = document.getElementById('newTaskIcon').value;
+      const input = document.getElementById('newTaskTitle');
+      const title = input.value.trim();
+
+      if (title) {
+        const newTask = {
+          id: 't_' + Date.now(),
+          icon: icon,
+          title: title,
+          done: false
+        };
+        appData[currentUser][currentDayType].push(newTask);
+        saveData();
+        input.value = '';
+        render();
+      }
+    }
+
+    function resetCurrentTasks() {
+      if (confirm('今日のチェックを全てやり直しますか？')) {
+        appData[currentUser][currentDayType].forEach(t => t.done = false);
+        saveData();
+        render();
+      }
+    }
+
+    function resetToDefaultData() {
+      if (confirm('初期の項目状態に戻しますか？（追加・削除された項目も最初に戻ります）')) {
+        appData = JSON.parse(JSON.stringify(DEFAULT_PRESETS));
+        saveData();
+        render();
+      }
+    }
+
+    // Messages
+    function addQuickMessage(msg) {
+      messageInput.value = msg;
+    }
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      const now = new Date();
+      const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      if (!messages[currentUser]) messages[currentUser] = [];
+      messages[currentUser].unshift({ text, time: timeStr });
+
+      saveMessages();
+      messageInput.value = '';
+      renderMessages();
+    }
+
+    function renderMessages() {
+      const list = messages[currentUser] || [];
+      messageHistory.innerHTML = '';
+
+      list.slice(0, 3).forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'message-item';
+        item.innerHTML = `
+          <div>
+            <div>${m.text}</div>
+            <div class="message-time">${m.time}</div>
+          </div>
+          <button class="share-btn" onclick="shareMessage('${m.text}')">📲 おくる</button>
+        `;
+        messageHistory.appendChild(item);
+      });
+    }
+
+    function shareMessage(text) {
+      const userLabel = currentUser === 'ryo' ? 'りょう' : 'こはる';
+      const fullText = `【やったよ！】${userLabel}より: ${text}`;
+
+      if (navigator.share) {
+        navigator.share({ text: fullText }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(fullText).then(() => {
+          alert('メッセージをコピーしました！LINEなどに貼り付けて送れます。');
+        });
+      }
+    }
+
+    // Modal
+    function openInstallHelp() {
+      document.getElementById('installModal').classList.add('open');
+    }
+
+    function closeInstallHelp() {
+      document.getElementById('installModal').classList.remove('open');
+    }
+  </script>
+</body>
+</html>
